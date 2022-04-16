@@ -20,7 +20,7 @@ class Comment(models.Model):
     owner = models.CharField("Name", max_length=255, blank=False)
     created = models.DateTimeField("Created", auto_now_add=True)
     text = models.TextField("Text", blank=True)
-    article = models.ForeignKey(Article, related_name="comments", on_delete=models.CASCADE, blank=False)
+    article = models.ForeignKey(Article, related_name="comments", on_delete=models.CASCADE, blank=True)
     parent_comment = models.ForeignKey('self', null=True, blank=True,
                                        related_name='reply_comment', on_delete=models.CASCADE)
 
