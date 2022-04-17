@@ -25,6 +25,14 @@ class ArticleSerializer(serializers.ModelSerializer):
         fields = ("id", "title", "content", "comments")
 
 
+class ArticleListSerializer(serializers.ModelSerializer):
+    comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = Article
+        fields = ("id", "title", "content", "comments")
+
+
 class CommentReplySerializer(serializers.ModelSerializer):
 
     class Meta:

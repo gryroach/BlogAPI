@@ -1,22 +1,27 @@
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView, CreateAPIView
 from rest_framework_swagger.views import get_swagger_view
 
-from .serializers import ArticleSerializer, CommentSerializer, CommentReplySerializer, CommentArticleSerializer
+from .serializers import ArticleSerializer, CommentSerializer, CommentReplySerializer, \
+    CommentArticleSerializer, ArticleListSerializer
 from .models import Article, Comment
-from .src.comment_service import filter_result_of_article, filter_third_level_comment
+from .src.comment_service import filter_result_of_article, filter_third_level_comment, filter_comments
 from .src.validators import validate_parent_comment, validate_article_exist
 
 
 class ArticleListCreateView(ListCreateAPIView):
 
     queryset = Article.objects.all()
-    serializer_class = ArticleSerializer
+    serializer_class = ArticleListSerializer
 
 
 class ArticleDetailView(RetrieveAPIView):
 
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response.data['comments'] = filter_comments(response.data['comments'])
+        return super().finalize_response(request, response, *args, **kwargs)
 
 
 class ArticleBeforeThirdLevelCommentsView(RetrieveAPIView):
