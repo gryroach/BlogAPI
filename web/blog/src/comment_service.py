@@ -15,7 +15,7 @@ def filter_comments(comments):
     return result_comments
 
 
-def third_level_article_filter(comments, all_id):
+def count_level(comments, all_id):
     counter = {i: 0 for i in all_id}
 
     def _count_level(comment, level=1):
@@ -25,6 +25,13 @@ def third_level_article_filter(comments, all_id):
             if len(com['reply_comment']) != 0:
                 new_level += 1
                 _count_level(com['reply_comment'], new_level)
+    _count_level(comments)
+
+    return counter
+
+
+def third_level_article_filter(comments, all_id):
+    counter = count_level(comments, all_id)
 
     def _remove_element(comment):
         temp_comment = comment.copy()
@@ -35,9 +42,6 @@ def third_level_article_filter(comments, all_id):
             if len(com['reply_comment']) != 0:
                 _remove_element(com['reply_comment'])
         return comment
-
-    _count_level(comments)
-
     return _remove_element(comments)
 
 
@@ -59,17 +63,8 @@ def filter_third_level_comment(raw_data):
         all_id.append(i['id'])
 
     comments = filter_comments(comments)
-    counter = {i: 0 for i in all_id}
+    counter = count_level(comments, all_id)
 
-    def _count_level(comment, level=1):
-        for com in comment:
-            counter[com['id']] += level
-            new_level = level
-            if len(com['reply_comment']) != 0:
-                new_level += 1
-                _count_level(com['reply_comment'], new_level)
-
-    _count_level(comments)
     result = []
     for c in raw_data['results']:
         if counter[c['id']] == 3:
