@@ -34,13 +34,15 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
 
 class CommentReplySerializer(serializers.ModelSerializer):
+    article = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Comment
-        fields = ("owner", "text", "parent_comment")
+        fields = ("owner", "text", "parent_comment", "article")
 
 
 class CommentArticleSerializer(serializers.ModelSerializer):
+    article = serializers.PrimaryKeyRelatedField(queryset=Article.objects.all())
 
     class Meta:
         model = Comment

@@ -10,5 +10,5 @@ urlpatterns = [
     path("comment/add/to-article", CreateCommentToArticleView.as_view()),
     path("comment/add/to-comment", CreateReplyCommentView.as_view()),
     path("comment/3-level", ThirdLevelCommentsView.as_view()),
-    path("docs/", schema_view)
+    path("docs/", schema_view),
 ]

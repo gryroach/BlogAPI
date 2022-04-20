@@ -5,7 +5,8 @@ from .serializers import ArticleSerializer, CommentSerializer, CommentReplySeria
     CommentArticleSerializer, ArticleListSerializer
 from .models import Article, Comment
 from .src.comment_service import filter_result_of_article, filter_third_level_comment, filter_comments
-from .src.validators import validate_parent_comment, validate_article_exist
+from .src.validators import validate_parent_comment
+from .src.queries import comments, articles
 
 
 class ArticleListCreateView(ListCreateAPIView):
@@ -16,7 +17,7 @@ class ArticleListCreateView(ListCreateAPIView):
 
 class ArticleDetailView(RetrieveAPIView):
 
-    queryset = Article.objects.all()
+    queryset = articles
     serializer_class = ArticleSerializer
 
     def finalize_response(self, request, response, *args, **kwargs):
@@ -26,7 +27,7 @@ class ArticleDetailView(RetrieveAPIView):
 
 class ArticleBeforeThirdLevelCommentsView(RetrieveAPIView):
 
-    queryset = Article.objects.all()
+    queryset = articles
     serializer_class = ArticleSerializer
 
     def finalize_response(self, request, response, *args, **kwargs):
@@ -37,10 +38,6 @@ class ArticleBeforeThirdLevelCommentsView(RetrieveAPIView):
 class CreateCommentToArticleView(CreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentArticleSerializer
-
-    def perform_create(self, serializer):
-        validate_article_exist(self)
-        serializer.save()
 
 
 class CreateReplyCommentView(CreateAPIView):
@@ -54,13 +51,13 @@ class CreateReplyCommentView(CreateAPIView):
 
 class CommentListView(ListAPIView):
 
-    queryset = Comment.objects.all()
+    queryset = comments
     serializer_class = CommentSerializer
 
 
 class ThirdLevelCommentsView(ListAPIView):
 
-    queryset = Comment.objects.all()
+    queryset = comments
     serializer_class = CommentSerializer
 
     def finalize_response(self, request, response, *args, **kwargs):
