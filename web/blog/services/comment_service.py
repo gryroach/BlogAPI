@@ -56,17 +56,37 @@ def filter_result_of_article(raw_data):
     return raw_data
 
 
-def filter_third_level_comment(raw_data):
+def filter_third_level_comment(comments):
     all_id = []
-    comments = raw_data['results']
     for i in comments:
         all_id.append(i['id'])
-
-    comments = filter_comments(comments)
-    counter = count_level(comments, all_id)
-
+    filtered_comments = filter_comments(comments)
+    counter = count_level(filtered_comments, all_id)
     result = []
-    for c in raw_data['results']:
+    for c in comments:
         if counter[c['id']] == 3:
             result.append(c)
     return result
+
+
+def add_reply_to_comment(comments):
+    all_comments = comments.copy()
+
+    def add_reply_to_comment_(com):
+        result = []
+        for ex_com in all_comments:
+            if ex_com['parent_comment']:
+                if ex_com['parent_comment'] == com['id']:
+                    reply = {'id': ex_com['id'],
+                             'owner': ex_com['owner'],
+                             'created': ex_com['created'],
+                             'text': ex_com['text'],
+                             'article': ex_com['article'],
+                             'parent_comment': ex_com['parent_comment']}
+                    reply['reply_comment'] = add_reply_to_comment_(reply)
+                    result.append(reply)
+        return result
+
+    for comment in comments:
+        comment['reply_comment'] = add_reply_to_comment_(comment)
+    return comments

@@ -1,38 +1,43 @@
-from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView, CreateAPIView
+from django.db.models import Prefetch
+from rest_framework.generics import ListCreateAPIView, CreateAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_swagger.views import get_swagger_view
 
-from .serializers import ArticleSerializer, CommentSerializer, CommentReplySerializer, \
-    CommentArticleSerializer, ArticleListSerializer
+from .serializers import ArticleSerializer, CommentSerializer, \
+    CommentReplySerializer, CommentArticleSerializer
 from .models import Article, Comment
-from .src.comment_service import filter_result_of_article, filter_third_level_comment, filter_comments
-from .src.validators import validate_parent_comment
-from .src.queries import comments, articles
+from .services.comment_service import filter_result_of_article, \
+    filter_third_level_comment, filter_comments, add_reply_to_comment
+from .services.validators import validate_parent_comment
 
 
 class ArticleListCreateView(ListCreateAPIView):
-
-    queryset = Article.objects.all()
-    serializer_class = ArticleListSerializer
-
-
-class ArticleDetailView(RetrieveAPIView):
-
-    queryset = articles
+    queryset = Article.objects.prefetch_related(Prefetch(
+        "comments", queryset=Comment.objects.all()))
     serializer_class = ArticleSerializer
 
-    def finalize_response(self, request, response, *args, **kwargs):
-        response.data['comments'] = filter_comments(response.data['comments'])
-        return super().finalize_response(request, response, *args, **kwargs)
+
+class ArticleDetailView(APIView):
+    def get(self, request, pk):
+        article = Article.objects.get(pk=pk)
+        article_data = ArticleSerializer(article).data
+        comment_data = CommentSerializer(Comment.objects.filter(article__id=pk),
+                                         many=True).data
+        comments = add_reply_to_comment(comment_data)
+        article_data["comments"] = filter_comments(comments)
+        return Response(article_data)
 
 
-class ArticleBeforeThirdLevelCommentsView(RetrieveAPIView):
-
-    queryset = articles
-    serializer_class = ArticleSerializer
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        response.data = filter_result_of_article(response.data)
-        return super().finalize_response(request, response, *args, **kwargs)
+class ArticleBeforeThirdLevelCommentsView(APIView):
+    def get(self, request, pk):
+        article = Article.objects.get(pk=pk)
+        article_data = ArticleSerializer(article).data
+        comment_data = CommentSerializer(Comment.objects.filter(article__id=pk),
+                                         many=True).data
+        article_data["comments"] = add_reply_to_comment(comment_data)
+        response = filter_result_of_article(article_data)
+        return Response(response)
 
 
 class CreateCommentToArticleView(CreateAPIView):
@@ -49,20 +54,21 @@ class CreateReplyCommentView(CreateAPIView):
         serializer.save(article=article)
 
 
-class CommentListView(ListAPIView):
+class CommentListView(APIView):
+    def get(self, request):
+        comment_data = CommentSerializer(Comment.objects.all(),
+                                         many=True).data
+        response = add_reply_to_comment(comment_data)
+        return Response(response)
 
-    queryset = comments
-    serializer_class = CommentSerializer
 
-
-class ThirdLevelCommentsView(ListAPIView):
-
-    queryset = comments
-    serializer_class = CommentSerializer
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        response.data = filter_third_level_comment(response.data)
-        return super().finalize_response(request, response, *args, **kwargs)
+class ThirdLevelCommentsView(APIView):
+    def get(self, request):
+        comment_data = CommentSerializer(Comment.objects.all(),
+                                         many=True).data
+        comments = add_reply_to_comment(comment_data)
+        response = filter_third_level_comment(comments)
+        return Response(response)
 
 
 schema_view = get_swagger_view(title='Blog API')
